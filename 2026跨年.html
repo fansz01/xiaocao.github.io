@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>派森小草:2026跨年</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; overflow: hidden;
+            background: #000; color: #fff;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(20, 20, 40, 1) 0%, #000 100%);
+            z-index: -1;
+        }
+
+        #user-logo {
+            position: absolute; top: 30px; right: 30px;
+            width: 100px; height: auto; z-index: 100;
+            opacity: 0.8; filter: drop-shadow(0 0 8px rgba(255,255,255,0.3));
+        }
+
+        /* 音乐控制面板样式 */
+        .music-controls {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .music-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .music-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .volume-slider {
+            width: 100px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4dffff;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(77, 255, 255, 0.5);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4dffff;
+            cursor: pointer;
+            border: none;
+        }
+
+        .music-info {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 48px; margin-bottom: 40px;
+            background: linear-gradient(90deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: titleGlow 3s infinite alternate;
+            letter-spacing: 4px; font-weight: bold; z-index: 5;
+        }
+
+        .greeting-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 30px;
+            border-radius: 50px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(5px);
+            z-index: 5;
+            animation: softPulse 2s infinite alternate;
+        }
+
+        .greeting-text {
+            font-size: 30px;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        #led-display {
+            display: flex; flex-direction: row;
+            align-items: center; justify-content: center;
+            gap: 12px; margin-bottom: 40px;
+            padding: 35px; background: rgba(255, 255, 255, 0.03);
+            border-radius: 25px; position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); z-index: 5;
+        }
+
+        .char-box { 
+            display: flex; flex-direction: column;
+            align-items: center; gap: 5px; 
+            animation: boxFloat 4s infinite ease-in-out;
+        }
+        
+        .led {
+            width: 14px; height: 14px; 
+            background: #111; border-radius: 2px;
+            transition: background 0.4s ease;
+        }
+
+        .led.on {
+            animation: rainbowGlow 2s infinite linear;
+        }
+
+        .led-particle {
+            position: absolute; width: 5px; height: 5px; border-radius: 1px;
+            pointer-events: none; z-index: 2;
+        }
+
+        .clock-box {
+            background: #0a0a0a; padding: 25px 60px;
+            border-radius: 20px; border: 1px solid #333;
+            text-align: center; z-index: 5;
+            position: relative;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #timer { 
+            font-size: 80px; font-family: 'Courier New', monospace; 
+            font-weight: bold; color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            transition: opacity 0.8s ease;
+        }
+
+        #python-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex; 
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .python-char-box { 
+            display: flex; flex-direction: column;
+            align-items: center; gap: 5px; 
+        }
+        
+        .python-led {
+            width: 12px; height: 12px; 
+            background: #111; border-radius: 2px;
+            transition: background 0.4s ease;
+        }
+
+        .python-led.on {
+            animation: rainbowGlow 2s infinite linear;
+        }
+
+        @keyframes rainbowGlow {
+            0% { background: #ff0000; box-shadow: 0 0 12px #ff0000; }
+            33% { background: #00ff00; box-shadow: 0 0 12px #00ff00; }
+            66% { background: #00ffff; box-shadow: 0 0 12px #00ffff; }
+            100% { background: #ff0000; box-shadow: 0 0 12px #ff0000; }
+        }
+
+        @keyframes softPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.02); opacity: 1; }
+        }
+
+        @keyframes boxFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes titleGlow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        
+        /* 音乐频谱可视化 */
+        .music-visualizer {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 60px;
+            z-index: 5;
+        }
+
+        .music-bar {
+            width: 4px;
+            background: linear-gradient(to top, #ff4d4d, #4dffff);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <img id="user-logo" src="xiaocao.png" alt="LOGO" onerror="console.log('图片加载失败，请检查路径')">
+    
+    <!-- 音乐控制面板 -->
+    <div class="music-controls">
+        <button id="playPauseBtn" class="music-btn">▶️</button>
+        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
+        <div id="musicInfo" class="music-info">点击播放音乐</div>
+    </div>
+    
+    <!-- 音乐频谱可视化 -->
+    <div class="music-visualizer" id="visualizer"></div>
+
+    <div class="title" id="main-title">✨ 感谢2025(^-^) ✨</div>
+
+    <div class="greeting-box" id="greeting-container">
+        <div class="greeting-text" id="greeting-msg">点赞、收藏、关注、鼓励的朋友们～</div>
+    </div>
+    
+    <div id="led-display"></div>
+
+    <div class="clock-box">
+        <div id="timer">00:09</div>
+        <div id="python-display"></div>
+    </div>
+    
+    <!-- 音频元素 -->
+    <audio id="bgMusic" loop>
+        <!-- 默认音乐（可以使用在线音乐链接） -->
+        <!-- 如果没有音乐文件，浏览器会静音播放，但控制面板仍会工作 -->
+
+        <source src="sense.ogg" type="audio/ogg">
+        <!-- 备用音乐源 -->
+        
+    </audio>
+
+<script>
+// 音乐控制
+const bgMusic = document.getElementById('bgMusic');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const volumeSlider = document.getElementById('volumeSlider');
+const musicInfo = document.getElementById('musicInfo');
+const visualizer = document.getElementById('visualizer');
+
+// 初始化音频上下文（用于频谱可视化）
+let audioContext;
+let analyser;
+let dataArray;
+let bufferLength;
+let bars = [];
+
+// 创建频谱可视化条
+for (let i = 0; i < 32; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'music-bar';
+    bar.style.height = '5px';
+    visualizer.appendChild(bar);
+    bars.push(bar);
+}
+
+// 播放/暂停功能
+playPauseBtn.addEventListener('click', () => {
+    if (bgMusic.paused) {
+        playMusic();
+    } else {
+        pauseMusic();
+    }
+});
+
+// 音量控制
+volumeSlider.addEventListener('input', (e) => {
+    const volume = e.target.value / 100;
+    bgMusic.volume = volume;
+    musicInfo.textContent = `音量: ${e.target.value}%`;
+    
+    // 保存音量设置
+    localStorage.setItem('newYearMusicVolume', e.target.value);
+});
+
+// 初始化音量
+const savedVolume = localStorage.getItem('newYearMusicVolume');
+if (savedVolume) {
+    volumeSlider.value = savedVolume;
+    bgMusic.volume = savedVolume / 100;
+    musicInfo.textContent = `音量: ${savedVolume}%`;
+}
+
+function playMusic() {
+    // 尝试播放音乐
+    const playPromise = bgMusic.play();
+    
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            // 播放成功
+            playPauseBtn.textContent = '⏸️';
+            musicInfo.textContent = '播放中...';
+            
+            // 初始化音频分析（用于可视化）
+            initAudioAnalyser();
+            
+            // 开始可视化动画
+            animateVisualizer();
+            
+        }).catch(error => {
+            // 播放失败（通常是用户未交互）
+            console.log('自动播放被阻止，请点击播放按钮');
+            playPauseBtn.textContent = '▶️';
+            musicInfo.textContent = '点击播放';
+            
+            // 显示提示
+            musicInfo.textContent = '点击播放按钮开启音乐';
+            
+            // 设置点击事件再次尝试
+            playPauseBtn.onclick = () => {
+                bgMusic.play().then(() => {
+                    playPauseBtn.textContent = '⏸️';
+                    musicInfo.textContent = '播放中...';
+                    initAudioAnalyser();
+                    animateVisualizer();
+                });
+            };
+        });
+    }
+}
+
+function pauseMusic() {
+    bgMusic.pause();
+    playPauseBtn.textContent = '▶️';
+    musicInfo.textContent = '已暂停';
+    
+    // 停止可视化
+    if (visualizer) {
+        bars.forEach(bar => {
+            bar.style.height = '5px';
+        });
+    }
+}
+
+// 初始化音频分析器
+function initAudioAnalyser() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(bgMusic);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        analyser.fftSize = 64;
+        
+        bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+    }
+}
+
+// 动画频谱可视化
+function animateVisualizer() {
+    if (!analyser) return;
+    
+    analyser.getByteFrequencyData(dataArray);
+    
+    // 更新可视化条
+    for (let i = 0; i < bars.length; i++) {
+        const value = dataArray[i] || 0;
+        const height = Math.max(5, (value / 255) * 60);
+        bars[i].style.height = `${height}px`;
+        
+        // 根据频率改变颜色
+        const hue = (i * 10 + Date.now() / 50) % 360;
+        bars[i].style.background = `linear-gradient(to top, hsl(${hue}, 100%, 50%), hsl(${(hue + 60) % 360}, 100%, 70%))`;
+    }
+    
+    requestAnimationFrame(animateVisualizer);
+}
+
+// 自动播放（在用户交互后）
+document.addEventListener('click', function initAudio() {
+    // 确保页面至少被点击过一次
+    document.removeEventListener('click', initAudio);
+    
+    // 检查是否已经播放，如果没有则播放
+    if (bgMusic.paused) {
+        playMusic();
+    }
+    
+    // 激活 AudioContext
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+});
+
+// 也可以为整个页面添加点击监听
+document.body.addEventListener('click', function() {
+    if (bgMusic.paused) {
+        playMusic();
+    }
+});
+// 根据页面事件调整音乐
+let isPlayingSpecial = false;
+
+// 新增 'PYTHON' 字母的 LED 像素模式
+const PATTERNS = {
+    "0": ["01110","10001","10001","10001","10001","10001","01110"],
+    "1": ["00100","01100","00100","00100","00100","00100","01110"],
+    "2": ["01110","10001","00001","00110","01000","10000","11111"],
+    "3": ["11111","00001","00010","00110","00010","00001","11111"],
+    "5": ["11111","10000","11110","00001","00001","10001","01110"],
+    "6": ["01110","10000","11110","10001","10001","10001","01110"],
+    // PYTHON 的字母像素定义（5x7 格式）
+    "P": ["11110","10001","10001","11110","10000","10000","10000"],
+    "Y": ["10001","01010","00100","00100","00100","00100","00100"],
+    "T": ["11111","00100","00100","00100","00100","00100","00100"],
+    "H": ["10001","10001","10001","11111","10001","10001","10001"],
+    "O": ["01110","10001","10001","10001","10001","10001","01110"],
+    "N": ["10001","11001","10101","10101","10101","10011","10001"]
+};
+
+function renderLED(digits) {
+    const container = document.getElementById('led-display');
+    container.innerHTML = "";
+    Array.from(digits).forEach((num, charIndex) => {
+        const charBox = document.createElement('div');
+        charBox.className = 'char-box';
+        charBox.style.animationDelay = (charIndex * 0.1) + "s";
+        const dots = PATTERNS[num] || ["00000","00000","00000","00000","00000","00000","00000"];
+        for (let r = 0; r < 7; r++) {
+            const ledRow = document.createElement('div');
+            ledRow.style.display = "flex";
+            ledRow.style.gap = "4px";
+            for (let c = 0; c < 5; c++) {
+                const led = document.createElement('div');
+                led.className = 'led';
+                if (dots[r][c] === "1") {
+                    led.classList.add('on');
+                    led.style.animationDelay = (charIndex * 0.1 + r * 0.05) + "s";
+                }
+                ledRow.appendChild(led);
+            }
+            charBox.appendChild(ledRow);
+        }
+        container.appendChild(charBox);
+    });
+}
+
+function createPythonDisplay() {
+    const container = document.getElementById('python-display');
+    container.innerHTML = "";
+    const pythonWord = "PYTHON";
+    
+    Array.from(pythonWord).forEach((char, charIndex) => {
+        const charBox = document.createElement('div');
+        charBox.className = 'python-char-box';
+        const pattern = PATTERNS[char];
+        
+        for (let r = 0; r < 7; r++) {
+            const ledRow = document.createElement('div');
+            ledRow.style.display = "flex";
+            ledRow.style.gap = "4px";
+            for (let c = 0; c < 5; c++) {
+                const led = document.createElement('div');
+                led.className = 'python-led';
+                if (pattern && pattern[r][c] === "1") {
+                    led.classList.add('on');
+                    led.style.animationDelay = (charIndex * 0.1 + r * 0.05) + "s";
+                }
+                ledRow.appendChild(led);
+            }
+            charBox.appendChild(ledRow);
+        }
+        container.appendChild(charBox);
+    });
+}
+
+// 修改烟花粒子函数，添加目标位置参数
+function createPixelFirework(startX, startY, particleCount = 25, isBig = false, targetPositions = []) {
+    const colors = ['#ff4d4d', '#4dff4d', '#4dffff', '#ff4dff', '#ffff4d', '#ffffff'];
+    
+    for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('div');
+        p.className = 'led-particle';
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        p.style.background = color;
+        p.style.boxShadow = `0 0 8px ${color}`;
+        document.body.appendChild(p);
+
+        // 初始位置和速度
+        let posX = startX, posY = startY;
+        let vx, vy;
+        let gravity = 0.08;
+        let opacity = 1;
+        
+        // 如果有目标位置，为每个粒子分配一个
+        let target = null;
+        if (targetPositions.length > 0) {
+            // 为每个粒子分配一个特定的目标位置
+            target = targetPositions[i % targetPositions.length];
+            
+            // 初始速度：先向外散开
+            const angle = Math.random() * Math.PI * 2;
+            const spreadSpeed = isBig ? 8 : 4;
+            vx = Math.cos(angle) * spreadSpeed;
+            vy = Math.sin(angle) * spreadSpeed;
+        } else {
+            // 正常烟花行为
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = isBig ? (Math.random() * 10 + 4) : (Math.random() * 5 + 2);
+            vx = Math.cos(angle) * velocity;
+            vy = Math.sin(angle) * velocity;
+        }
+
+        const move = () => {
+            if (target) {
+                // 计算到目标的距离
+                const dx = target.x - posX;
+                const dy = target.y - posY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 粒子运动逻辑：先散开，然后向目标汇聚
+                if (distance > 10) {
+                    // 逐渐转向目标
+                    const targetSpeed = Math.min(distance / 15, 6);
+                    const targetAngle = Math.atan2(dy, dx);
+                    
+                    // 混合当前速度和目标方向
+                    const currentSpeed = Math.sqrt(vx * vx + vy * vy);
+                    const currentAngle = Math.atan2(vy, vx);
+                    
+                    // 逐渐转向目标角度
+                    const blend = 0.1; // 转向强度
+                    const newAngle = currentAngle * (1 - blend) + targetAngle * blend;
+                    
+                    vx = Math.cos(newAngle) * targetSpeed;
+                    vy = Math.sin(newAngle) * targetSpeed;
+                    gravity = 0;
+                } else {
+                    // 接近目标，减速并保持
+                    vx *= 0.9;
+                    vy *= 0.9;
+                    posX = target.x;
+                    posY = target.y;
+                    opacity = 0.9; // 保持可见
+                }
+            } else {
+                // 正常烟花行为
+                posX += vx;
+                posY += vy;
+                vy += gravity;
+                vx *= 0.98;
+                opacity -= 0.015;
+            }
+
+            p.style.left = posX + 'px';
+            p.style.top = posY + 'px';
+            p.style.opacity = opacity;
+            
+            if (opacity > 0.01) {
+                requestAnimationFrame(move);
+            } else {
+                p.remove();
+            }
+        };
+        
+        requestAnimationFrame(move);
+    }
+}
+
+function randomBackgroundFireworks() {
+    const x = Math.random() * window.innerWidth;
+    const y = Math.random() * (window.innerHeight * 0.6);
+    createPixelFirework(x, y, 15, false); // 减少粒子数量
+}
+
+// 构建 PYTHON 字母的目标位置数组
+function generatePythonTargetPositions() {
+    const pythonWord = "PYTHON";
+    const letterSpacing = 15;
+    const dotSize = 12 + 4;
+    
+    const clockBox = document.querySelector('.clock-box');
+    const boxRect = clockBox.getBoundingClientRect();
+    const boxCenterX = boxRect.left + boxRect.width / 2;
+    const boxCenterY = boxRect.top + boxRect.height / 2;
+    
+    const pythonWidth = (5 * 6 * dotSize) + (5 * letterSpacing);
+    const startX = boxCenterX - pythonWidth / 2;
+    const startY = boxCenterY - (7 * dotSize) / 2;
+    
+    const targetPositions = [];
+    
+    let currentX = startX;
+    for (let charIndex = 0; charIndex < pythonWord.length; charIndex++) {
+        const char = pythonWord[charIndex];
+        const pattern = PATTERNS[char];
+        if (!pattern) continue;
+        
+        for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 5; c++) {
+                if (pattern[r][c] === "1") {
+                    targetPositions.push({
+                        x: currentX + c * dotSize,
+                        y: startY + r * dotSize
+                    });
+                }
+            }
+        }
+        
+        currentX += 5 * dotSize + letterSpacing;
+    }
+    
+    return targetPositions;
+}
+
+// --- 主程序逻辑 ---
+renderLED("20251231");
+const bgFireworkTimer = setInterval(randomBackgroundFireworks, 1200);
+
+let timeLeft = 9;
+const timerEl = document.getElementById('timer');
+const titleEl = document.getElementById('main-title');
+const greetingEl = document.getElementById('greeting-msg');
+const pythonDisplay = document.getElementById('python-display');
+
+const countdown = setInterval(() => {
+    timeLeft--;
+    if (timeLeft > 0) {
+        timerEl.innerText = "00:0" + timeLeft;
+        if(timeLeft <= 3) {
+            const sideX = (timeLeft % 2 === 0) ? window.innerWidth * 0.2 : window.innerWidth * 0.8;
+            createPixelFirework(sideX, window.innerHeight * 0.4, 15, false);
+            
+            // 倒计时最后3秒，如果音乐在播放，增加音量
+            if (!bgMusic.paused) {
+                bgMusic.volume = Math.min(0.7, bgMusic.volume + 0.1);
+            }
+        }
+    } else {
+        clearInterval(countdown);
+        clearInterval(bgFireworkTimer);
+        
+        // 20260101保持不变
+        renderLED("20260101");
+        titleEl.innerText = "🎊 期待2026(^-^) 🎊";
+        greetingEl.innerText = "新的一年，大吉大利，平安喜乐！";
+        
+        // 显示"跨年快乐"
+        timerEl.innerText = "跨年快乐！";
+        timerEl.style.color = "#ffdd44";
+        
+        // 跨年时刻，调整音乐效果
+        if (!bgMusic.paused) {
+            // 短暂提高音量庆祝
+            const originalVolume = bgMusic.volume;
+            bgMusic.volume = Math.min(0.9, originalVolume + 0.2);
+            setTimeout(() => {
+                bgMusic.volume = originalVolume;
+            }, 2000);
+        }
+        
+        // 增加背景烟花持续绽放
+        let backgroundFireworksAfter = setInterval(() => {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * (window.innerHeight * 0.4);
+            createPixelFirework(x, y, 12, false);
+        }, 1200);
+        
+        // 生成PYTHON目标位置
+        const pythonTargetPositions = generatePythonTargetPositions();
+        
+        // 创建PYTHON显示（但先隐藏）
+        createPythonDisplay();
+        pythonDisplay.style.opacity = "0";
+        
+        // 开始烟花汇聚效果
+        let bursts = 0;
+        const finalCelebration = setInterval(() => {
+            const fireworkCount = Math.floor(Math.random() * 2) + 1;
+            
+            for(let f = 0; f < fireworkCount; f++) {
+                const rx = (Math.random() * 0.8 + 0.1) * window.innerWidth;
+                const ry = (Math.random() * 0.3 + 0.1) * window.innerHeight;
+                
+                const particleCount = Math.min(40, pythonTargetPositions.length * 0.3);
+                createPixelFirework(rx, ry, particleCount, true, pythonTargetPositions);
+            }
+            
+            bursts++;
+            if(bursts >= 8) {
+                clearInterval(finalCelebration);
+                
+                // 等待烟花汇聚完成后，显示PYTHON并隐藏"跨年快乐"
+                setTimeout(() => {
+                    timerEl.style.opacity = "0";
+                    
+                    setTimeout(() => {
+                        pythonDisplay.style.opacity = "1";
+                        
+                        // PYTHON显示时调整音乐
+                        if (!bgMusic.paused) {
+                            musicInfo.textContent = 'Python Time! 🐍';
+                        }
+                        
+                        clearInterval(backgroundFireworksAfter);
+                        
+                        for(let i = 0; i < 5; i++) {
+                            setTimeout(() => {
+                                const x = (Math.random() * 0.8 + 0.1) * window.innerWidth;
+                                const y = (Math.random() * 0.5 + 0.2) * window.innerHeight;
+                                createPixelFirework(x, y, 20, false);
+                            }, i * 300);
+                        }
+                    }, 800);
+                }, 800);
+            }
+        }, 600);
+    }
+}, 1000);
+</script>
+</body>
+</html>
