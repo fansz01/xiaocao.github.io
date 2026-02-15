@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>派森小草2026</title>
+<style>
+body{margin:0;background:#111;overflow:hidden;}
+canvas{display:block;}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+const WIDTH=canvas.width;
+const HEIGHT=canvas.height;
+
+//星空 
+let stars=[],time=0;
+function initStars(){
+    for(let i=0;i<400;i++){
+        stars.push({
+            x:Math.random()*WIDTH,
+            y:Math.random()*HEIGHT,
+            size:Math.random()*1.5+.5,
+            base:160+Math.random()*60,
+            speed:Math.random()*0.02+0.01,
+            phase:Math.random()*Math.PI*2
+        });
+    }
+}
+function drawStars(){
+    ctx.fillStyle="#111";
+    ctx.fillRect(0,0,WIDTH,HEIGHT);
+    stars.forEach(s=>{
+        const b=s.base+Math.sin(time*s.speed+s.phase)*30;
+        ctx.fillStyle=`rgb(${b},${b},${b})`;
+        ctx.beginPath();
+        ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+        ctx.fill();
+    });
+    time++;
+}
+
+//点阵 
+function generateDots(text,fontSize,offsetY=0,spacing=6,fontWeight="bold"){
+    const temp=document.createElement("canvas");
+    const tctx=temp.getContext("2d");
+
+    tctx.font=`${fontWeight} ${fontSize}px SimHei,Arial`;
+    const metrics=tctx.measureText(text);
+    const textWidth = metrics.width;
+    const textHeight = fontSize;
+
+    temp.width = textWidth + 10;
+    temp.height = textHeight + 10;
+
+    tctx.font=`${fontWeight} ${fontSize}px SimHei,Arial`;
+    tctx.fillStyle="white";
+    tctx.textAlign="center";
+    tctx.textBaseline="middle";
+    tctx.fillText(text,temp.width/2,temp.height/2);
+
+    const data=tctx.getImageData(0,0,temp.width,temp.height).data;
+    let arr=[];
+
+    for(let y=0;y<temp.height;y+=spacing){
+        for(let x=0;x<temp.width;x+=spacing){
+            const i=(y*temp.width+x)*4;
+            if(data[i+3]>128){
+                arr.push({
+                    x:x + WIDTH/2 - temp.width/2,
+                    y:y + HEIGHT/2 - temp.height/2 + offsetY,
+                    tx: x + WIDTH/2 - temp.width/2,
+                    ty: y + HEIGHT/2 - temp.height/2 + offsetY,
+                    state:"normal",
+                    vx:0,
+                    vy:0,
+                    alpha:1,
+                    angle:0
+                });
+            }
+        }
+    }
+    return arr;
+}
+
+let dots=[];
+let morphing=false;
+let countdown=10;
+let countdownTimer=null;
+let zeroReady=false;
+let showNewYear=false;
+
+//烟花
+class Firework{
+    constructor(x=null,isBig=false){
+        this.x = x!==null ? x : Math.random()*WIDTH;
+        this.y = HEIGHT;
+        this.targetY = HEIGHT/2+(Math.random()*120-60);
+        this.speed = isBig?7:8;
+        this.exploded=false;
+        this.hue=Math.random()*360;
+        this.isBig=isBig;
+        this.trail=[];
+        this.trailLength=isBig?25:18;
+    }
+
+    update(){
+        if(!this.exploded){
+            this.trail.push({x:this.x,y:this.y});
+            if(this.trail.length>this.trailLength) this.trail.shift();
+            this.y-=this.speed;
+            if(this.y<=this.targetY){
+                this.explode();
+                this.exploded=true;
+                if(firstStage){
+                    firstStage=false;
+                    startMassLaunch();
+                }
+            }
+        }
+    }
+
+    draw(){
+        if(!this.exploded){
+            for(let i=0;i<this.trail.length;i++){
+                const t=this.trail[i];
+                const alpha=i/this.trail.length;
+                ctx.globalAlpha=alpha*0.9;
+                ctx.fillStyle=`hsl(${this.hue},100%,60%)`;
+                ctx.beginPath();
+                ctx.arc(t.x,t.y,(this.isBig?6:4)*alpha,0,Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha=1;
+            ctx.fillStyle=`hsl(${this.hue},100%,80%)`;
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,this.isBig?8:5,0,Math.PI*2);
+            ctx.fill();
+        }
+    }
+
+    explode(){
+        for(let i=0;i<(this.isBig?350:220);i++){
+            particles.push(new Particle(this.x,this.y,this.hue,Math.random()*6+3));
+        }
+    }
+}
+
+class Particle{
+    constructor(x,y,hue,speed){
+        this.x=x;this.y=y;
+        this.hue=hue;
+        this.angle=Math.random()*Math.PI*2;
+        this.speed=speed;
+        this.life=100;
+    }
+    update(){
+        this.x+=Math.cos(this.angle)*this.speed;
+        this.y+=Math.sin(this.angle)*this.speed;
+        this.speed*=0.96;
+        this.life--;
+    }
+    draw(){
+        ctx.globalAlpha=this.life/100;
+        ctx.fillStyle=`hsl(${this.hue},100%,60%)`;
+        ctx.beginPath();
+        ctx.arc(this.x,this.y,3,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha=1;
+    }
+}
+
+let fireworks=[],particles=[];
+let firstStage=true;
+let massInterval=null;
+
+function launchFirst(){
+    fireworks.push(new Firework(WIDTH/2,true));
+}
+
+function startMassLaunch(){
+    for(let i=0;i<3;i++){
+        fireworks.push(new Firework());
+    }
+    massInterval=setInterval(()=>{
+        for(let i=0;i<2;i++){
+            fireworks.push(new Firework());
+        }
+    },500);
+
+    setTimeout(()=>{ startMorph(); },3000);
+}
+
+//倒计时
+function startMorph(){
+    morphing=true;
+    countdown=10;
+
+    dots.forEach(d=>{
+        d.state="morph";
+        d.x=WIDTH/2 + (Math.random()-0.5)*50;
+        d.y=HEIGHT/2 + (Math.random()-0.5)*50;
+        d.alpha=1; d.vx=0; d.vy=0;
+    });
+
+    updateNumber(countdown);
+
+    countdownTimer=setInterval(()=>{
+        countdown--;
+        if(countdown>0){
+            updateNumber(countdown);
+        }else{
+            clearInterval(countdownTimer);
+            zeroReady=true;
+            setTimeout(()=>{
+                explodeZeroDots();
+                setTimeout(()=>{
+                    showNewYear=true;
+                    startBlessings();
+                },1000);
+            },500);
+        }
+    },1000);
+}
+
+function updateNumber(num){
+    let safeFont=HEIGHT*0.49;
+    const targetDots=generateDots(String(num),safeFont,-HEIGHT*0.05,6,"bold");
+    const len = Math.min(dots.length,targetDots.length);
+    for(let i=0;i<len;i++){
+        dots[i].tx = targetDots[i].x;
+        dots[i].ty = targetDots[i].y;
+        dots[i].state="morph";
+        dots[i].alpha=1;
+        dots[i].vx=0;
+        dots[i].vy=0;
+    }
+    for(let i=len;i<dots.length;i++){
+        dots[i].alpha=0;
+        dots[i].state="morph";
+        dots[i].vx=0; dots[i].vy=0;
+    }
+}
+
+function explodeZeroDots(){
+    dots.forEach(d=>{
+        if(Math.random()<0.95){
+            d.state="explode";
+            d.vx=(Math.random()-0.5)*5;
+            d.vy=(Math.random()-0.5)*5-2;
+            d.alpha=1;
+        }
+    });
+}
+
+//祝福语
+const blessings = [
+    { text: "2026", effect: "fadeIn" },
+    { text: "愿我们", effect: "flyFromTop" },
+    { text: "好运+1", effect: "scatter" },
+    { text: "健康+1", effect: "zoomIn" },
+    { text: "幸福+1", effect: "rotateIn" },
+    { text: "财富+♾️", effect: "wave" }
+];
+let blessingIndex = 0;
+let blessingTimer = null;
+
+function startBlessings(){
+    if(!showNewYear) return;
+    const newTextDots = generateDots("新年快乐",140,0,6,"bold");
+    applyEffect(newTextDots,"fadeIn");
+
+    setTimeout(()=>{
+        blessingIndex = 0;
+        blessingTimer = setInterval(()=>{
+            if(blessingIndex >= blessings.length){
+                clearInterval(blessingTimer);
+                return;
+            }
+            const blessing = blessings[blessingIndex];
+            const newTextDots = generateDots(blessing.text,140,0,6,"bold");
+            applyEffect(newTextDots, blessing.effect);
+            blessingIndex++;
+        },2000);
+    },1000);
+}
+
+//特效
+function applyEffect(targetDots, effect){
+    dots.forEach((d,i)=>{
+        const target = targetDots[Math.floor(i * targetDots.length / dots.length)];
+        d.tx = target.x;
+        d.ty = target.y;
+        d.state="effect";
+        d.alpha=1;
+        d.vx=0;
+        d.vy=0;
+        d.angle=0;
+
+        switch(effect){
+            case "fadeIn": d.alpha=0; break;
+            case "flyFromTop": d.y=-50-Math.random()*100; break;
+            case "scatter": d.x+=(Math.random()-0.5)*200; d.y+=(Math.random()-0.5)*200; break;
+            case "zoomIn": d.x=WIDTH/2; d.y=HEIGHT/2; break;
+            case "rotateIn": d.angle=Math.random()*Math.PI*4; d.x=WIDTH/2+Math.cos(d.angle)*200; d.y=HEIGHT/2+Math.sin(d.angle)*200; break;
+            case "wave": d.y+=Math.sin(Math.random()*Math.PI*4)*100; break;
+        }
+    });
+}
+
+//动画
+function animate(){
+    drawStars();
+
+    if(!morphing){
+        dots.forEach(d=>{
+            d.x += (Math.random()-0.5)*2;
+            d.y += (Math.random()-0.5)*2;
+        });
+    }
+
+    dots.forEach(d=>{
+        if(d.state==="morph"){
+            d.x+=(d.tx-d.x)*0.08;
+            d.y+=(d.ty-d.y)*0.08;
+        } else if(d.state==="explode"){
+            d.x+=d.vx;
+            d.y+=d.vy;
+            d.vy+=0.05;
+            d.alpha*=0.995;
+        } else if(d.state==="effect"){
+            d.x += (d.tx - d.x) * 0.08;
+            d.y += (d.ty - d.y) * 0.08;
+            if(d.alpha < 1) d.alpha += 0.05;
+        }
+        ctx.globalAlpha=d.alpha;
+        ctx.fillStyle="white";
+        ctx.beginPath();
+        ctx.arc(d.x,d.y,3,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha=1;
+    });
+
+    fireworks.forEach(f=>{f.update();f.draw();});
+    particles.forEach((p,i)=>{
+        p.update();p.draw();
+        if(p.life<=0)particles.splice(i,1);
+    });
+
+    requestAnimationFrame(animate);
+}
+
+//初始化
+initStars();
+dots=generateDots("再见2025",180,0,6,"bold");
+launchFirst();
+animate();
+</script>
+</body>
+</html>
